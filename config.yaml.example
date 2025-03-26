@@ -1,0 +1,40 @@
+environments:
+  qa:
+    host: opensearch-qa.example.com
+    port: 443
+    use_ssl: true
+    verify_certs: true
+    # Uncomment to use AWS SigV4 authentication
+    # aws_auth:
+    #   region: us-east-1
+    #   service: es
+    # Uncomment to use SOCKS5 proxy
+    # proxy:
+    #   host: proxy.example.com
+    #   port: 1080
+    #   username: proxy_user  # Optional
+    #   password: proxy_pass  # Optional
+
+  prod:
+    host: opensearch-prod.example.com
+    port: 443
+    use_ssl: true
+    verify_certs: true
+    # aws_auth:
+    #   region: us-east-1
+    #   service: es
+    # proxy:
+    #   host: proxy.example.com
+    #   port: 1080
+
+# Templates directory where templates will be saved
+templates_dir: ./templates
+
+# Patterns to ignore when listing or saving templates
+ignore_patterns:
+  - .opendistro_security
+  - .kibana*
+  - .apm*
+  - .monitoring*
+  - opendistro
+  - ss4o_*
