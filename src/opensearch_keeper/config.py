@@ -84,17 +84,49 @@ class Config:
             )
         return environments[env_name]
 
-    def get_templates_dir(self) -> str:
+    def get_storage_dir(self) -> str:
         """
-        Get the directory where templates should be saved.
+        Get the base storage directory for all artifacts.
+
+        Returns:
+            Path to the storage directory.
+        """
+        storage_dir = self.config_data.get("storage_dir", "./dump")
+        # Create the directory if it doesn't exist
+        Path(storage_dir).mkdir(parents=True, exist_ok=True)
+        return storage_dir
+
+    def get_templates_dir(self, env_name: str) -> str:
+        """
+        Get the directory where templates should be saved for a specific environment.
+
+        Args:
+            env_name: Name of the environment.
 
         Returns:
             Path to the templates directory.
         """
-        templates_dir = self.config_data.get("templates_dir", "./templates")
+        storage_dir = self.get_storage_dir()
+        templates_dir = os.path.join(storage_dir, env_name, "templates")
         # Create the directory if it doesn't exist
         Path(templates_dir).mkdir(parents=True, exist_ok=True)
         return templates_dir
+
+    def get_ism_policies_dir(self, env_name: str) -> str:
+        """
+        Get the directory where ISM policies should be saved for a specific environment.
+
+        Args:
+            env_name: Name of the environment.
+
+        Returns:
+            Path to the ISM policies directory.
+        """
+        storage_dir = self.get_storage_dir()
+        policies_dir = os.path.join(storage_dir, env_name, "ism_policies")
+        # Create the directory if it doesn't exist
+        Path(policies_dir).mkdir(parents=True, exist_ok=True)
+        return policies_dir
 
     def get_ignore_patterns(self) -> List[str]:
         """

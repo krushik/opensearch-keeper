@@ -27,10 +27,15 @@ environments:
     #   host: proxy.example.com
     #   port: 1080
 
-# Templates directory where templates will be saved
-templates_dir: ./templates
+# Base storage directory where all artifacts will be saved
+# Artifacts will be saved in subdirectories based on environment:
+# - ./dump/qa/templates/
+# - ./dump/qa/ism_policies/
+# - ./dump/prod/templates/
+# - ./dump/prod/ism_policies/
+storage_dir: ./dump
 
-# Patterns to ignore when listing or saving templates
+# Patterns to ignore when listing or saving templates and ISM policies
 ignore_patterns:
   - .opendistro_security
   - .kibana*
@@ -38,3 +43,4 @@ ignore_patterns:
   - .monitoring*
   - opendistro
   - ss4o_*
+  - .internal*

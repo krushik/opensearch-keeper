@@ -4,6 +4,7 @@ Utility functions for opensearch-keeper.
 
 import logging
 import sys
+from typing import List, Dict, Any
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -21,7 +22,7 @@ def setup_logging(verbose: bool = False) -> None:
     )
 
 
-def format_template_list(templates: list, output_format: str = "table") -> str:
+def format_template_list(templates: List[Dict[str, Any]], output_format: str = "table") -> str:
     """
     Format a list of templates for display.
 
@@ -49,4 +50,35 @@ def format_template_list(templates: list, output_format: str = "table") -> str:
         result = "Templates:\n"
         for template in templates:
             result += f"- {template['name']}\n"
+        return result
+
+
+def format_policy_list(policies: List[Dict[str, Any]], output_format: str = "table") -> str:
+    """
+    Format a list of ISM policies for display.
+
+    Args:
+        policies: List of policy dictionaries.
+        output_format: Output format ('table', 'json', or 'yaml').
+
+    Returns:
+        Formatted string representation of policies.
+    """
+    if output_format == "json":
+        import json
+
+        return json.dumps([p["name"] for p in policies], indent=2)
+
+    elif output_format == "yaml":
+        import yaml
+
+        return yaml.dump([p["name"] for p in policies], default_flow_style=False)
+
+    else:  # table format
+        if not policies:
+            return "No ISM policies found."
+
+        result = "ISM Policies:\n"
+        for policy in policies:
+            result += f"- {policy['name']}\n"
         return result

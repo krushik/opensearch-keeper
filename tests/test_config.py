@@ -28,7 +28,7 @@ def sample_config():
                 "verify_certs": True,
             },
         },
-        "templates_dir": "./templates",
+        "storage_dir": "./dump",
         "ignore_patterns": [".opendistro_security", ".kibana*"],
     }
 
@@ -66,10 +66,24 @@ def test_get_environment_config(sample_config):
         config.get_environment_config("non_existent")
 
 
+def test_get_storage_dir(sample_config):
+    """Test getting storage directory."""
+    config = Config(sample_config)
+    assert config.get_storage_dir() == "./dump"
+
+
 def test_get_templates_dir(sample_config):
     """Test getting templates directory."""
     config = Config(sample_config)
-    assert config.get_templates_dir() == "./templates"
+    templates_dir = config.get_templates_dir("qa")
+    assert templates_dir.endswith("/dump/qa/templates")
+
+
+def test_get_ism_policies_dir(sample_config):
+    """Test getting ISM policies directory."""
+    config = Config(sample_config)
+    policies_dir = config.get_ism_policies_dir("prod")
+    assert policies_dir.endswith("/dump/prod/ism_policies")
 
 
 def test_get_ignore_patterns(sample_config):

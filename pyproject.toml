@@ -1,8 +1,8 @@
 [project]
 name = "opensearch-keeper"
 version = "0.1.0"
-description = "A CLI tool for managing OpenSearch index templates"
-keywords = ["opensearch", "elasticsearch", "templates", "cli"]
+description = "A CLI tool for managing OpenSearch index templates and ISM policies"
+keywords = ["opensearch", "elasticsearch", "templates", "ism", "cli"]
 readme = "README.md"
 authors = [
     {name = "krushik", email = "krushik@gmail.com"},
@@ -20,16 +20,17 @@ requires-python = ">=3.7"
 dependencies = [
     "PyYAML>=6.0",
     "boto3>=1.24.0",
-    "click>=8.0.0",
+    "typer[all]>=0.9.0",
     "opensearch-py>=2.0.0",
     "requests[socks]>=2.27.0",
+    "shellingham>=1.5.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/krushik/opensearch-keeper"
 
 [project.scripts]
-opensearch-keeper = "opensearch_keeper.cli:cli"
+opensearch-keeper = "opensearch_keeper.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -37,6 +38,9 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
 
 [tool.uv]
 dev-dependencies = [
