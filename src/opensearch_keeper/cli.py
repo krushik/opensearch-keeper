@@ -33,14 +33,10 @@ console = Console()
 
 
 def get_config(config_path: Optional[str] = None) -> Config:
-    """
-    Get or create a Config instance.
+    """Get or create a Config instance.
 
-    Args:
-        config_path: Path to the configuration file.
-
-    Returns:
-        Config instance.
+    :param config_path: Path to the configuration file.
+    :return: Config instance.
     """
     global config_instance
     if config_instance is None:
@@ -53,15 +49,11 @@ def get_config(config_path: Optional[str] = None) -> Config:
 
 
 def get_template_manager(config: Config, env: str) -> TemplateManager:
-    """
-    Create a template manager for the specified environment.
+    """Create a template manager for the specified environment.
 
-    Args:
-        config: Configuration object.
-        env: Environment name.
-
-    Returns:
-        TemplateManager instance.
+    :param config: Configuration object.
+    :param env: Environment name.
+    :return: TemplateManager instance.
     """
     try:
         env_config = config.get_environment_config(env)
@@ -74,15 +66,11 @@ def get_template_manager(config: Config, env: str) -> TemplateManager:
 
 
 def get_ism_policy_manager(config: Config, env: str) -> ISMPolicyManager:
-    """
-    Create an ISM policy manager for the specified environment.
+    """Create an ISM policy manager for the specified environment.
 
-    Args:
-        config: Configuration object.
-        env: Environment name.
-
-    Returns:
-        ISMPolicyManager instance.
+    :param config: Configuration object.
+    :param env: Environment name.
+    :return: ISMPolicyManager instance.
     """
     try:
         env_config = config.get_environment_config(env)
@@ -101,8 +89,10 @@ def main(
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging."),
 ):
-    """
-    Manage OpenSearch index templates and ISM policies.
+    """Manage OpenSearch index templates and ISM policies.
+
+    :param config: Path to configuration file.
+    :param verbose: Enable verbose logging.
     """
     setup_logging(verbose)
     get_config(config)
@@ -136,7 +126,10 @@ def install_completions(
         ..., help="Shell type (bash, zsh, fish) for which to install completions."
     ),
 ):
-    """Install shell completions."""
+    """Install shell completions.
+
+    :param shell: Shell type (bash, zsh, fish) for which to install completions.
+    """
     import subprocess
     from pathlib import Path
 
@@ -206,7 +199,12 @@ def list_templates(
         case_sensitive=False,
     ),
 ):
-    """List templates in OpenSearch."""
+    """List templates in OpenSearch.
+
+    :param env: Environment to use (qa, prod, etc.).
+    :param pattern: Pattern to filter templates.
+    :param format: Output format (table, json, yaml).
+    """
     config = get_config()
     template_manager = get_template_manager(config, env)
 
@@ -225,7 +223,11 @@ def save_templates(
         None, "--pattern", "-p", help="Pattern to filter templates."
     ),
 ):
-    """Save templates from OpenSearch to local files."""
+    """Save templates from OpenSearch to local files.
+
+    :param env: Environment to use (qa, prod, etc.).
+    :param pattern: Pattern to filter templates.
+    """
     config = get_config()
     template_manager = get_template_manager(config, env)
 
@@ -249,7 +251,11 @@ def publish_templates(
         None, "--pattern", "-p", help="Pattern to filter templates."
     ),
 ):
-    """Publish templates from local files to OpenSearch."""
+    """Publish templates from local files to OpenSearch.
+
+    :param env: Environment to use (qa, prod, etc.).
+    :param pattern: Pattern to filter templates.
+    """
     config = get_config()
     template_manager = get_template_manager(config, env)
 
@@ -283,7 +289,12 @@ def delete_template(
     env: str = typer.Option(..., "--env", "-e", help="Environment to use (qa, prod, etc.)."),
     force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompt."),
 ):
-    """Delete a template from OpenSearch."""
+    """Delete a template from OpenSearch.
+
+    :param template_name: Name of the template to delete.
+    :param env: Environment to use (qa, prod, etc.).
+    :param force: Skip confirmation prompt.
+    """
     config = get_config()
     template_manager = get_template_manager(config, env)
 
@@ -316,7 +327,12 @@ def list_ism_policies(
         case_sensitive=False,
     ),
 ):
-    """List ISM policies in OpenSearch."""
+    """List ISM policies in OpenSearch.
+
+    :param env: Environment to use (qa, prod, etc.).
+    :param pattern: Pattern to filter policies.
+    :param format: Output format (table, json, yaml).
+    """
     config = get_config()
     policy_manager = get_ism_policy_manager(config, env)
 
@@ -363,7 +379,11 @@ def save_ism_policies(
         None, "--pattern", "-p", help="Pattern to filter policies."
     ),
 ):
-    """Save ISM policies from OpenSearch to local files."""
+    """Save ISM policies from OpenSearch to local files.
+
+    :param env: Environment to use (qa, prod, etc.).
+    :param pattern: Pattern to filter policies.
+    """
     config = get_config()
     policy_manager = get_ism_policy_manager(config, env)
 
@@ -387,7 +407,11 @@ def publish_ism_policies(
         None, "--pattern", "-p", help="Pattern to filter policies."
     ),
 ):
-    """Publish ISM policies from local files to OpenSearch."""
+    """Publish ISM policies from local files to OpenSearch.
+
+    :param env: Environment to use (qa, prod, etc.).
+    :param pattern: Pattern to filter policies.
+    """
     config = get_config()
     policy_manager = get_ism_policy_manager(config, env)
 
@@ -421,7 +445,12 @@ def delete_ism_policy(
     env: str = typer.Option(..., "--env", "-e", help="Environment to use (qa, prod, etc.)."),
     force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompt."),
 ):
-    """Delete an ISM policy from OpenSearch."""
+    """Delete an ISM policy from OpenSearch.
+
+    :param policy_name: Name of the ISM policy to delete.
+    :param env: Environment to use (qa, prod, etc.).
+    :param force: Skip confirmation prompt.
+    """
     config = get_config()
     policy_manager = get_ism_policy_manager(config, env)
 

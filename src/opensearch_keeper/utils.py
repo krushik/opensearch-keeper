@@ -8,11 +8,9 @@ from typing import List, Dict, Any
 
 
 def setup_logging(verbose: bool = False) -> None:
-    """
-    Set up logging configuration.
+    """Set up logging configuration.
 
-    Args:
-        verbose: Whether to enable verbose logging.
+    :param verbose: Whether to enable verbose logging.
     """
     log_level = logging.DEBUG if verbose else logging.INFO
     log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -23,15 +21,11 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def format_template_list(templates: List[Dict[str, Any]], output_format: str = "table") -> str:
-    """
-    Format a list of templates for display.
+    """Format a list of templates for display.
 
-    Args:
-        templates: List of template dictionaries.
-        output_format: Output format ('table', 'json', or 'yaml').
-
-    Returns:
-        Formatted string representation of templates.
+    :param templates: List of template dictionaries.
+    :param output_format: Output format ('table', 'json', or 'yaml').
+    :return: Formatted string representation of templates.
     """
     if output_format == "json":
         import json
@@ -54,15 +48,11 @@ def format_template_list(templates: List[Dict[str, Any]], output_format: str = "
 
 
 def format_policy_list(policies: List[Dict[str, Any]], output_format: str = "table") -> str:
-    """
-    Format a list of ISM policies for display.
+    """Format a list of ISM policies for display.
 
-    Args:
-        policies: List of policy dictionaries.
-        output_format: Output format ('table', 'json', or 'yaml').
-
-    Returns:
-        Formatted string representation of policies.
+    :param policies: List of policy dictionaries.
+    :param output_format: Output format ('table', 'json', or 'yaml').
+    :return: Formatted string representation of policies.
     """
     if output_format == "json":
         import json

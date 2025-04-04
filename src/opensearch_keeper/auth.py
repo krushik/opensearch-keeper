@@ -16,13 +16,11 @@ class ProxiedRequestsHttpConnection(RequestsHttpConnection):
     """Custom connection class that supports SOCKS proxy."""
 
     def __init__(self, proxy_config: Dict[str, Any], *args, **kwargs):
-        """
-        Initialize the proxied connection.
+        """Initialize the proxied connection.
 
-        Args:
-            proxy_config: Dictionary with proxy configuration.
-            *args: Additional arguments for RequestsHttpConnection.
-            **kwargs: Additional keyword arguments for RequestsHttpConnection.
+        :param proxy_config: Dictionary with proxy configuration.
+        :param args: Additional arguments for RequestsHttpConnection.
+        :param kwargs: Additional keyword arguments for RequestsHttpConnection.
         """
         super().__init__(*args, **kwargs)
         self.proxy_config = proxy_config
@@ -38,21 +36,17 @@ class ProxiedRequestsHttpConnection(RequestsHttpConnection):
         ignore=(),
         headers=None,
     ):
-        """
-        Perform the request through a proxy.
+        """Perform the request through a proxy.
 
-        Args:
-            method: HTTP method.
-            url: URL to request.
-            params: Query parameters.
-            body: Request body.
-            timeout: Request timeout.
-            allow_redirects: Allow redirects.
-            ignore: Status codes to ignore.
-            headers: Request headers.
-
-        Returns:
-            Response from the server.
+        :param method: HTTP method.
+        :param url: URL to request.
+        :param params: Query parameters.
+        :param body: Request body.
+        :param timeout: Request timeout.
+        :param allow_redirects: Allow redirects.
+        :param ignore: Status codes to ignore.
+        :param headers: Request headers.
+        :return: Response from the server.
         """
         proxy_host = self.proxy_config.get("host")
         proxy_port = self.proxy_config.get("port")
@@ -75,15 +69,11 @@ class ProxiedRequestsHttpConnection(RequestsHttpConnection):
 
 
 def create_aws_auth(region: str, service: str = "es") -> Any:
-    """
-    Create AWS SigV4 authentication for OpenSearch.
+    """Create AWS SigV4 authentication for OpenSearch.
 
-    Args:
-        region: AWS region.
-        service: AWS service name (default: 'es').
-
-    Returns:
-        AWS authentication object.
+    :param region: AWS region.
+    :param service: AWS service name (default: 'es').
+    :return: AWS authentication object.
     """
     try:
         from opensearchpy import AWSV4SignerAuth
@@ -101,28 +91,20 @@ def create_aws_auth(region: str, service: str = "es") -> Any:
 
 
 def create_basic_auth(username: str, password: str) -> HTTPBasicAuth:
-    """
-    Create HTTP Basic authentication.
+    """Create HTTP Basic authentication.
 
-    Args:
-        username: Username.
-        password: Password.
-
-    Returns:
-        HTTP Basic authentication object.
+    :param username: Username.
+    :param password: Password.
+    :return: HTTP Basic authentication object.
     """
     return HTTPBasicAuth(username, password)
 
 
 def get_connection_params(env_config: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Get connection parameters for OpenSearch client.
+    """Get connection parameters for OpenSearch client.
 
-    Args:
-        env_config: Environment configuration.
-
-    Returns:
-        Dictionary with connection parameters.
+    :param env_config: Environment configuration.
+    :return: Dictionary with connection parameters.
     """
     connection_params = {
         "hosts": [{"host": env_config["host"], "port": env_config["port"]}],

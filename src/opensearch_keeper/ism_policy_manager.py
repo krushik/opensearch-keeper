@@ -20,13 +20,11 @@ class ISMPolicyManager:
     """Manager for OpenSearch Index State Management policies."""
 
     def __init__(self, env_config: Dict[str, Any], policies_dir: str, ignore_patterns: List[str]):
-        """
-        Initialize the ISM policy manager.
+        """Initialize the ISM policy manager.
 
-        Args:
-            env_config: Environment configuration.
-            policies_dir: Directory where ISM policies will be saved.
-            ignore_patterns: List of policy name patterns to ignore.
+        :param env_config: Environment configuration.
+        :param policies_dir: Directory where ISM policies will be saved.
+        :param ignore_patterns: List of policy name patterns to ignore.
         """
         self.env_config = env_config
         self.policies_dir = policies_dir
@@ -35,11 +33,9 @@ class ISMPolicyManager:
         self.ism_client = IndexManagementClient(self.client)
 
     def _create_client(self) -> OpenSearch:
-        """
-        Create an OpenSearch client.
+        """Create an OpenSearch client.
 
-        Returns:
-            OpenSearch client.
+        :return: OpenSearch client.
         """
         connection_params = get_connection_params(self.env_config)
         try:
@@ -55,14 +51,10 @@ class ISMPolicyManager:
             raise
 
     def _should_ignore(self, policy_name: str) -> bool:
-        """
-        Check if a policy should be ignored based on ignore patterns.
+        """Check if a policy should be ignored based on ignore patterns.
 
-        Args:
-            policy_name: Name of the policy.
-
-        Returns:
-            True if the policy should be ignored, False otherwise.
+        :param policy_name: Name of the policy.
+        :return: True if the policy should be ignored, False otherwise.
         """
         for pattern in self.ignore_patterns:
             if fnmatch.fnmatch(policy_name, pattern):
@@ -70,25 +62,19 @@ class ISMPolicyManager:
         return False
 
     def list_policies(self, pattern: Optional[str] = None) -> List[Dict[str, Any]]:
-        """
-        List ISM policies in OpenSearch, cleaning up metadata.
+        """List ISM policies in OpenSearch, cleaning up metadata.
 
         Retrieves policies, filters them based on an optional pattern and
         internal ignore list, and cleans up metadata fields before returning.
 
-        Args:
-            pattern: Optional fnmatch pattern to filter policies by name.
-
-        Returns:
-            A list of dictionaries, where each dictionary represents a policy
-            and contains:
-              - 'name': The name of the policy (str).
-              - 'policy': The cleaned policy definition (Dict[str, Any]).
-              - 'last_updated_time': The top-level update time in seconds (int)
-
-        Raises:
-            Exception: If the API call fails or the response format is invalid.
-            ValueError: If the response structure from the API is unexpected.
+        :param pattern: Optional fnmatch pattern to filter policies by name.
+        :return: A list of dictionaries, where each dictionary represents a policy
+                 and contains:
+                 - 'name': The name of the policy (str).
+                 - 'policy': The cleaned policy definition (Dict[str, Any]).
+                 - 'last_updated_time': The top-level update time in seconds (int)
+        :raises Exception: If the API call fails or the response format is invalid.
+        :raises ValueError: If the response structure from the API is unexpected.
         """
         try:
             # Get all policies using the Index Management plugin client
@@ -148,14 +134,10 @@ class ISMPolicyManager:
             raise
 
     def save_policies(self, pattern: Optional[str] = None) -> List[str]:
-        """
-        Save ISM policies from OpenSearch to local files.
+        """Save ISM policies from OpenSearch to local files.
 
-        Args:
-            pattern: Optional pattern to filter policies.
-
-        Returns:
-            List of saved policy file paths.
+        :param pattern: Optional pattern to filter policies.
+        :return: List of saved policy file paths.
         """
         policies = self.list_policies(pattern)
         saved_files = []
@@ -168,8 +150,8 @@ class ISMPolicyManager:
         return saved_files
 
     def save_policy(self, name, policy) -> str:
-        """
-        Save ISM policy to local files.
+        """Save ISM policy to local files.
+
         :param name: Name of the policy.
         :param policy: Policy data to save.
         :return: Path to the policy file.
@@ -185,15 +167,11 @@ class ISMPolicyManager:
         return file_path
 
     def publish_policy(self, policy_name: str, policy_file: str) -> bool:
-        """
-        Publish an ISM policy from a local file to OpenSearch.
+        """Publish an ISM policy from a local file to OpenSearch.
 
-        Args:
-            policy_name: Name of the policy.
-            policy_file: Path to the policy file.
-
-        Returns:
-            True if the policy was published successfully, False otherwise.
+        :param policy_name: Name of the policy.
+        :param policy_file: Path to the policy file.
+        :return: True if the policy was published successfully, False otherwise.
         """
         try:
             with open(policy_file, "r") as f:
@@ -211,14 +189,10 @@ class ISMPolicyManager:
         return True
 
     def publish_policies(self, pattern: Optional[str] = None) -> Dict[str, bool]:
-        """
-        Publish ISM policies from local files to OpenSearch.
+        """Publish ISM policies from local files to OpenSearch.
 
-        Args:
-            pattern: Optional pattern to filter policy files.
-
-        Returns:
-            Dictionary mapping policy names to success status.
+        :param pattern: Optional pattern to filter policy files.
+        :return: Dictionary mapping policy names to success status.
         """
         results = {}
         # Get all policy files
@@ -235,14 +209,10 @@ class ISMPolicyManager:
         return results
 
     def delete_policy(self, policy_name: str) -> bool:
-        """
-        Delete an ISM policy from OpenSearch.
+        """Delete an ISM policy from OpenSearch.
 
-        Args:
-            policy_name: Name of the policy to delete.
-
-        Returns:
-            True if the policy was deleted, False otherwise.
+        :param policy_name: Name of the policy to delete.
+        :return: True if the policy was deleted, False otherwise.
         """
         try:
             self.ism_client.delete_policy(policy=policy_name)

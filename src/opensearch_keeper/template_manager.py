@@ -19,13 +19,11 @@ class TemplateManager:
     """Manager for OpenSearch index templates."""
 
     def __init__(self, env_config: Dict[str, Any], templates_dir: str, ignore_patterns: List[str]):
-        """
-        Initialize the template manager.
+        """Initialize the template manager.
 
-        Args:
-            env_config: Environment configuration.
-            templates_dir: Directory where templates will be saved.
-            ignore_patterns: List of template name patterns to ignore.
+        :param env_config: Environment configuration.
+        :param templates_dir: Directory where templates will be saved.
+        :param ignore_patterns: List of template name patterns to ignore.
         """
         self.env_config = env_config
         self.templates_dir = templates_dir
@@ -33,11 +31,9 @@ class TemplateManager:
         self.client = self._create_client()
 
     def _create_client(self) -> OpenSearch:
-        """
-        Create an OpenSearch client.
+        """Create an OpenSearch client.
 
-        Returns:
-            OpenSearch client.
+        :return: OpenSearch client.
         """
         connection_params = get_connection_params(self.env_config)
         try:
@@ -53,14 +49,10 @@ class TemplateManager:
             raise
 
     def _should_ignore(self, template_name: str) -> bool:
-        """
-        Check if a template should be ignored based on ignore patterns.
+        """Check if a template should be ignored based on ignore patterns.
 
-        Args:
-            template_name: Name of the template.
-
-        Returns:
-            True if the template should be ignored, False otherwise.
+        :param template_name: Name of the template.
+        :return: True if the template should be ignored, False otherwise.
         """
         for pattern in self.ignore_patterns:
             if fnmatch.fnmatch(template_name, pattern):
@@ -68,14 +60,10 @@ class TemplateManager:
         return False
 
     def list_templates(self, pattern: Optional[str] = None) -> List[Dict[str, Any]]:
-        """
-        List templates in OpenSearch.
+        """List templates in OpenSearch.
 
-        Args:
-            pattern: Optional pattern to filter templates.
-
-        Returns:
-            List of templates.
+        :param pattern: Optional pattern to filter templates.
+        :return: List of templates.
         """
         try:
             # Get all templates using the new index template API
@@ -101,14 +89,10 @@ class TemplateManager:
             raise
 
     def save_templates(self, pattern: Optional[str] = None) -> List[str]:
-        """
-        Save templates from OpenSearch to local files.
+        """Save templates from OpenSearch to local files.
 
-        Args:
-            pattern: Optional pattern to filter templates.
-
-        Returns:
-            List of saved template file paths.
+        :param pattern: Optional pattern to filter templates.
+        :return: List of saved template file paths.
         """
         templates = self.list_templates(pattern)
         saved_files = []
@@ -131,15 +115,11 @@ class TemplateManager:
         return saved_files
 
     def publish_template(self, template_name: str, template_file: str) -> bool:
-        """
-        Publish a template from a local file to OpenSearch.
+        """Publish a template from a local file to OpenSearch.
 
-        Args:
-            template_name: Name of the template
-            template_file: Path to the template file.
-
-        Returns:
-            Tuple of (template_name, success_status).
+        :param template_name: Name of the template
+        :param template_file: Path to the template file.
+        :return: True if the template was published successfully, False otherwise.
         """
         try:
             with open(template_file, "r") as f:
@@ -164,14 +144,10 @@ class TemplateManager:
             return False
 
     def publish_templates(self, pattern: Optional[str] = None) -> Dict[str, bool]:
-        """
-        Publish templates from local files to OpenSearch.
+        """Publish templates from local files to OpenSearch.
 
-        Args:
-            pattern: Optional pattern to filter template files.
-
-        Returns:
-            Dictionary mapping template names to success status.
+        :param pattern: Optional pattern to filter template files.
+        :return: Dictionary mapping template names to success status.
         """
         results = {}
         # Get all template files
@@ -188,14 +164,10 @@ class TemplateManager:
         return results
 
     def delete_template(self, template_name: str) -> bool:
-        """
-        Delete a template from OpenSearch.
+        """Delete a template from OpenSearch.
 
-        Args:
-            template_name: Name of the template to delete.
-
-        Returns:
-            True if the template was deleted, False otherwise.
+        :param template_name: Name of the template to delete.
+        :return: True if the template was deleted, False otherwise.
         """
         try:
             self.client.indices.delete_index_template(name=template_name)
