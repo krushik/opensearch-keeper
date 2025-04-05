@@ -5,8 +5,10 @@ Tests for the ISM policy manager module.
 import os
 import tempfile
 import pytest
-from unittest.mock import MagicMock, patch, ANY
+import yaml
+from unittest.mock import MagicMock, patch
 
+from opensearchpy.exceptions import NotFoundError
 from opensearch_keeper.ism_policy_manager import ISMPolicyManager
 
 
@@ -116,23 +118,84 @@ def test_save_policies(policy_manager):
     assert "policy2.yaml" in file_names
 
 
-def test_publish_policy(policy_manager):
-    """Test publishing an ISM policy."""
-    # Create a temporary policy file
+def test_publish_policy_create(policy_manager):
+    """Test publishing a new ISM policy."""
+    # Mock get_policy to raise NotFoundError (policy doesn't exist)
+    policy_manager.ism_client.get_policy.side_effect = NotFoundError(404, "Not Found", {})
+
+    policy_name = "new_policy"
+    policy_content = {
+        "policy": {
+            "policy_id": policy_name,
+            "default_state": "hot",
+            "states": [{"name": "hot", "actions": [], "transitions": []}],
+        }
+    }
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        f.write(
-            "policy_id: test_policy\ndefault_state: hot\nstates:\n- name: hot\n  actions: []\n  transitions: []\n"
-        )
+        yaml.dump(policy_content["policy"], f)
         policy_file = f.name
-        policy_name = policy_file.split(".")[0]
+
     try:
         success = policy_manager.publish_policy(policy_name, policy_file)
 
-        # Check that the policy was published
         assert success is True
+        policy_manager.ism_client.get_policy.assert_called_once_with(policy=policy_name)
+        # Verify put_policy called without sequence numbers
+        policy_manager.ism_client.put_policy.assert_called_once_with(
+            policy=policy_name, body={"policy": policy_content["policy"]}
+        )
+    finally:
+        os.unlink(policy_file)
 
-        # Verify that the put_policy method was called with the correct arguments
-        policy_manager.ism_client.put_policy.assert_called_with(policy=policy_name, body=ANY)
+
+def test_publish_policy_update(policy_manager):
+    """Test updating an existing ISM policy."""
+    policy_name = "existing_policy"
+    existing_seq_no = 10
+    existing_primary_term = 1
+
+    # Mock get_policy to return an existing policy
+    policy_manager.ism_client.get_policy.return_value = {
+        "_id": policy_name,
+        "_version": 2,
+        "_seq_no": existing_seq_no,
+        "_primary_term": existing_primary_term,
+        "policy": {
+            "policy_id": policy_name,
+            "description": "Old description",
+            # ... other fields
+        },
+    }
+
+    updated_policy_content = {
+        "policy": {
+            "policy_id": policy_name,
+            "description": "Updated description",
+            "default_state": "warm",
+            "states": [{"name": "warm", "actions": [], "transitions": []}],
+        }
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(updated_policy_content["policy"], f)
+        policy_file = f.name
+
+    try:
+        success = policy_manager.publish_policy(policy_name, policy_file)
+
+        assert success is True
+        policy_manager.ism_client.get_policy.assert_called_once_with(policy=policy_name)
+        # Verify put_policy called WITH sequence numbers in params
+        expected_params = {
+            "if_seq_no": existing_seq_no,
+            "if_primary_term": existing_primary_term,
+        }
+        policy_manager.ism_client.put_policy.assert_called_once_with(
+            policy=policy_name,
+            body={"policy": updated_policy_content["policy"]},
+            params=expected_params,
+        )
     finally:
         os.unlink(policy_file)
 
@@ -145,4 +208,4 @@ def test_delete_policy(policy_manager):
     assert success is True
 
     # Verify that the delete_policy method was called with the correct arguments
-    policy_manager.ism_client.delete_policy.assert_called_with(policy="policy1")
+    policy_manager.ism_client.delete_policy.assert_called_once_with(policy="policy1")

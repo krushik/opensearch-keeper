@@ -26,3 +26,4 @@ templates/
 
 # Config file with sensitive information
 config.yaml
+.aider*

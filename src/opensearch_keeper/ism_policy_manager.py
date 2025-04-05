@@ -9,6 +9,7 @@ from typing import Dict, Any, List, Optional
 
 import yaml
 from opensearchpy import OpenSearch
+from opensearchpy.exceptions import NotFoundError
 from opensearchpy.plugins.index_management import IndexManagementClient
 
 from opensearch_keeper.auth import get_connection_params
@@ -181,8 +182,36 @@ class ISMPolicyManager:
                 logger.error(f"Invalid policy file format: {policy_file}")
                 return False
 
+            # Check if the policy already exists to get sequence numbers for update
+            seq_no = None
+            primary_term = None
+            try:
+                existing_policy = self.ism_client.get_policy(policy=policy_name)
+                seq_no = existing_policy.get("_seq_no")
+                primary_term = existing_policy.get("_primary_term")
+                logger.debug(
+                    f"Policy '{policy_name}' found. Using seq_no={seq_no}, primary_term={primary_term} for update."
+                )
+            except NotFoundError:
+                logger.debug(f"Policy '{policy_name}' not found. Creating new policy.")
+            except Exception as e:
+                logger.warning(
+                    f"Failed to get existing policy '{policy_name}', proceeding without sequence numbers: {e}"
+                )
+                # Decide if we should proceed or fail here. Proceeding might overwrite changes.
+                # For now, let's proceed as if it's a create operation.
+
             # Publish the policy using the Index Management client
-            self.ism_client.put_policy(policy=policy_name, body={"policy": policy_data})
+            if seq_no is not None and primary_term is not None:
+                params = {"if_seq_no": seq_no, "if_primary_term": primary_term}
+                self.ism_client.put_policy(
+                    policy=policy_name, body={"policy": policy_data}, params=params
+                )
+                logger.info(f"Updated ISM policy '{policy_name}' in OpenSearch.")
+            else:
+                self.ism_client.put_policy(policy=policy_name, body={"policy": policy_data})
+                logger.info(f"Created ISM policy '{policy_name}' in OpenSearch.")
+
         except Exception as e:
             logger.error(f"Failed to publish ISM policy '{policy_name}': {e}")
             return False
