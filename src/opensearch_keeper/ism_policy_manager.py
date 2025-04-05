@@ -250,3 +250,71 @@ class ISMPolicyManager:
         except Exception as e:
             logger.error(f"Failed to delete ISM policy '{policy_name}': {e}")
             return False
+
+    def diff_policy(self, policy_name: str) -> Optional[Dict[str, Any]]:
+        """Compare local policy file with the one in OpenSearch.
+
+        :param policy_name: Name of the policy to compare.
+        :return: Dictionary with diff information or None if policy doesn't exist remotely.
+        """
+        from deepdiff import DeepDiff
+
+        # Construct file path for local policy
+        policy_file = os.path.join(self.policies_dir, f"{policy_name}.yaml")
+
+        if not os.path.exists(policy_file):
+            logger.error(f"Local policy file not found: {policy_file}")
+            return None
+
+        # Load local policy
+        try:
+            with open(policy_file, "r") as f:
+                local_policy = yaml.safe_load(f)
+
+            if not local_policy or not isinstance(local_policy, dict):
+                logger.error(f"Invalid local policy file format: {policy_file}")
+                return None
+        except Exception as e:
+            logger.error(f"Failed to load local policy file '{policy_file}': {e}")
+            return None
+
+        # Try to get remote policy
+        try:
+            remote_response = self.ism_client.get_policy(policy=policy_name)
+            if not remote_response or "policy" not in remote_response:
+                logger.error(f"Invalid response format from get_policy API for '{policy_name}'")
+                return None
+
+            remote_policy = remote_response.get("policy", {})
+
+            # Clean metadata from remote policy for comparison
+            remote_policy.pop("last_updated_time", None)
+            remote_policy.pop("schema_version", None)
+            remote_policy.pop("policy_id", None)
+            ism_template_list = remote_policy.get("ism_template")
+            if isinstance(ism_template_list, list):
+                for ism_template_item in ism_template_list:
+                    if isinstance(ism_template_item, dict):
+                        ism_template_item.pop("last_updated_time", None)
+
+            # Get the diff
+            diff = DeepDiff(remote_policy, local_policy, ignore_order=True)
+
+            if not diff:
+                return {"has_changes": False}
+
+            return {
+                "has_changes": True,
+                "diff": diff,
+                "remote_policy": remote_policy,
+                "local_policy": local_policy,
+                "seq_no": remote_response.get("_seq_no"),
+                "primary_term": remote_response.get("_primary_term"),
+            }
+
+        except NotFoundError:
+            # Policy doesn't exist in OpenSearch
+            return None
+        except Exception as e:
+            logger.error(f"Failed to diff policy '{policy_name}': {e}")
+            raise

@@ -3,7 +3,9 @@ Command-line interface for opensearch-keeper.
 """
 
 import datetime
+import fnmatch
 import logging
+import os
 import sys
 from typing import Optional
 
@@ -406,36 +408,72 @@ def publish_ism_policies(
     pattern: Optional[str] = typer.Option(
         None, "--pattern", "-p", help="Pattern to filter policies."
     ),
+    force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation prompt."),
 ):
     """Publish ISM policies from local files to OpenSearch.
 
     :param env: Environment to use (qa, prod, etc.).
     :param pattern: Pattern to filter policies.
+    :param force: Skip confirmation prompt.
     """
     config = get_config()
     policy_manager = get_ism_policy_manager(config, env)
 
     try:
-        results = policy_manager.publish_policies(pattern)
+        # Get all policy files that match the pattern
+        policy_files = {}
+        for file in os.listdir(config.get_ism_policies_dir(env)):
+            if file.endswith((".yaml", ".yml")):
+                policy_name = file.split(".")[0]
+                if pattern and not fnmatch.fnmatch(policy_name, pattern):
+                    continue
+                policy_files[policy_name] = os.path.join(config.get_ism_policies_dir(env), file)
 
-        if not results:
-            typer.echo("No ISM policies were published.")
+        if not policy_files:
+            typer.echo("No ISM policy files found matching the pattern.")
             return
 
-        success_count = sum(1 for success in results.values() if success)
-        fail_count = len(results) - success_count
+        successful = {}
+        skipped = []
 
-        typer.echo(f"Published {success_count} ISM policies to OpenSearch")
-        if fail_count > 0:
-            typer.echo(f"Failed to publish {fail_count} ISM policies")
+        # Process each policy
+        for policy_name, policy_file in policy_files.items():
+            # Check if policy exists and get diff
+            diff_result = policy_manager.diff_policy(policy_name)
 
-            # Show failed policies
-            typer.echo("\nFailed policies:")
-            for name, success in results.items():
-                if not success:
-                    typer.echo(f"- {name}")
+            if diff_result is None:
+                # Policy doesn't exist in OpenSearch yet - no confirmation needed
+                typer.echo(f"Creating new policy: {policy_name}")
+                success = policy_manager.publish_policy(policy_name, policy_file)
+                if success:
+                    successful[policy_name] = True
+
+            elif diff_result["has_changes"]:
+                # Policy exists and has changes
+                typer.echo(f"\nChanges for policy '{policy_name}':")
+                typer.echo(diff_result["diff"].pretty())
+
+                if force or typer.confirm("Apply these changes?"):
+                    success = policy_manager.publish_policy(policy_name, policy_file)
+                    if success:
+                        successful[policy_name] = True
+                else:
+                    typer.echo(f"Skipping policy '{policy_name}'")
+                    skipped.append(policy_name)
+
+            else:
+                # Policy exists but no changes
+                typer.echo(f"No changes for policy '{policy_name}' - skipping")
+                skipped.append(policy_name)
+
+        # Show summary
+        if successful:
+            typer.echo(f"\nPublished {len(successful)} ISM policies to OpenSearch")
+        if skipped:
+            typer.echo(f"Skipped {len(skipped)} ISM policies")
+
     except Exception as e:
-        logger.exception(f"Failed to publish ISM policies: {e}")
+        logger.error(f"Failed to publish ISM policies: {e}")
         sys.exit(1)
 
 
