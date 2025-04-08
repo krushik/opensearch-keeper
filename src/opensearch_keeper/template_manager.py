@@ -152,9 +152,9 @@ class TemplateManager:
         results = {}
         # Get all template files
         for file in os.listdir(self.templates_dir):
-            if file.endswith((".yaml", ".yml")):
+            if file.endswith(".yaml"):
                 # Extract template name from filename
-                template_name = file.split(".")[0]
+                template_name = os.path.splitext(file)[0]
                 if pattern and not fnmatch.fnmatch(template_name, pattern):
                     continue
                 template_file = os.path.join(self.templates_dir, file)

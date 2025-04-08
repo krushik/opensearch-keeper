@@ -132,21 +132,19 @@ def test_publish_policy_create(policy_manager):
         }
     }
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+    # Create the policy file inside the manager's policies_dir
+    policy_file = os.path.join(policy_manager.policies_dir, f"{policy_name}.yaml")
+    with open(policy_file, "w") as f:
         yaml.dump(policy_content["policy"], f)
-        policy_file = f.name
 
-    try:
-        success = policy_manager.publish_policy(policy_name, policy_file)
+    success = policy_manager.publish_policy(policy_name)
 
-        assert success is True
-        policy_manager.ism_client.get_policy.assert_called_once_with(policy=policy_name)
-        # Verify put_policy called without sequence numbers
-        policy_manager.ism_client.put_policy.assert_called_once_with(
-            policy=policy_name, body={"policy": policy_content["policy"]}
-        )
-    finally:
-        os.unlink(policy_file)
+    assert success is True
+    policy_manager.ism_client.get_policy.assert_called_once_with(policy=policy_name)
+    # Verify put_policy called without sequence numbers
+    policy_manager.ism_client.put_policy.assert_called_once_with(
+        policy=policy_name, body={"policy": policy_content["policy"]}
+    )
 
 
 def test_publish_policy_update(policy_manager):
@@ -177,27 +175,25 @@ def test_publish_policy_update(policy_manager):
         }
     }
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+    # Create the policy file inside the manager's policies_dir
+    policy_file = os.path.join(policy_manager.policies_dir, f"{policy_name}.yaml")
+    with open(policy_file, "w") as f:
         yaml.dump(updated_policy_content["policy"], f)
-        policy_file = f.name
 
-    try:
-        success = policy_manager.publish_policy(policy_name, policy_file)
+    success = policy_manager.publish_policy(policy_name)
 
-        assert success is True
-        policy_manager.ism_client.get_policy.assert_called_once_with(policy=policy_name)
-        # Verify put_policy called WITH sequence numbers in params
-        expected_params = {
-            "if_seq_no": existing_seq_no,
-            "if_primary_term": existing_primary_term,
-        }
-        policy_manager.ism_client.put_policy.assert_called_once_with(
-            policy=policy_name,
-            body={"policy": updated_policy_content["policy"]},
-            params=expected_params,
-        )
-    finally:
-        os.unlink(policy_file)
+    assert success is True
+    policy_manager.ism_client.get_policy.assert_called_once_with(policy=policy_name)
+    # Verify put_policy called WITH sequence numbers in params
+    expected_params = {
+        "if_seq_no": existing_seq_no,
+        "if_primary_term": existing_primary_term,
+    }
+    policy_manager.ism_client.put_policy.assert_called_once_with(
+        policy=policy_name,
+        body={"policy": updated_policy_content["policy"]},
+        params=expected_params,
+    )
 
 
 def test_delete_policy(policy_manager):

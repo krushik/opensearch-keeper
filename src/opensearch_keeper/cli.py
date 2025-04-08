@@ -3,9 +3,7 @@ Command-line interface for opensearch-keeper.
 """
 
 import datetime
-import fnmatch
 import logging
-import os
 import sys
 from typing import Optional
 
@@ -420,31 +418,25 @@ def publish_ism_policies(
     policy_manager = get_ism_policy_manager(config, env)
 
     try:
-        # Get all policy files that match the pattern
-        policy_files = {}
-        for file in os.listdir(config.get_ism_policies_dir(env)):
-            if file.endswith((".yaml", ".yml")):
-                policy_name = file.split(".")[0]
-                if pattern and not fnmatch.fnmatch(policy_name, pattern):
-                    continue
-                policy_files[policy_name] = os.path.join(config.get_ism_policies_dir(env), file)
+        # Get all local policy names that match the pattern
+        policy_names = policy_manager.list_local_policies_names(pattern)
 
-        if not policy_files:
-            typer.echo("No ISM policy files found matching the pattern.")
+        if not policy_names:
+            typer.echo("No local ISM policy files found matching the pattern.")
             return
 
         successful = {}
         skipped = []
 
         # Process each policy
-        for policy_name, policy_file in policy_files.items():
+        for policy_name in policy_names:
             # Check if policy exists and get diff
             diff_result = policy_manager.diff_policy(policy_name)
 
             if diff_result is None:
                 # Policy doesn't exist in OpenSearch yet - no confirmation needed
                 typer.echo(f"Creating new policy: {policy_name}")
-                success = policy_manager.publish_policy(policy_name, policy_file)
+                success = policy_manager.publish_policy(policy_name)
                 if success:
                     successful[policy_name] = True
 
@@ -454,7 +446,7 @@ def publish_ism_policies(
                 typer.echo(diff_result["diff"].pretty())
 
                 if force or typer.confirm("Apply these changes?"):
-                    success = policy_manager.publish_policy(policy_name, policy_file)
+                    success = policy_manager.publish_policy(policy_name)
                     if success:
                         successful[policy_name] = True
                 else:

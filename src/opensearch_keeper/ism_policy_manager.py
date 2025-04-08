@@ -62,6 +62,48 @@ class ISMPolicyManager:
                 return True
         return False
 
+    def _find_policy_file(self, policy_name: str) -> Optional[str]:
+        """Find the policy file path for a given policy name.
+
+        Searches for policy_name.yaml in the policies directory.
+
+        :param policy_name: The name of the policy (without extension).
+        :return: The full path to the policy file, or None if not found.
+        """
+        file_path = os.path.join(self.policies_dir, f"{policy_name}.yaml")
+        if os.path.exists(file_path):
+            logger.debug(f"Found policy file for '{policy_name}': {file_path}")
+            return file_path
+        logger.warning(f"Policy file for '{policy_name}' not found in {self.policies_dir}")
+        return None
+
+    def list_local_policies_names(self, pattern: Optional[str] = None) -> List[str]:
+        """List local ISM policy names from the policies directory.
+
+        Filters files based on .yaml extension and an optional pattern.
+
+        :param pattern: Optional fnmatch pattern to filter policy names.
+        :return: List of policy names (filenames without extensions).
+        """
+        policy_names = []
+        try:
+            for filename in os.listdir(self.policies_dir):
+                if filename.endswith(".yaml"):
+                    policy_name = os.path.splitext(filename)[0]
+                    if self._should_ignore(policy_name):
+                        continue
+                    # Apply pattern filtering if provided
+                    if pattern and not fnmatch.fnmatch(policy_name, pattern):
+                        continue
+                    policy_names.append(policy_name)
+        except FileNotFoundError:
+            logger.error(f"Policies directory not found: {self.policies_dir}")
+            return []  # Return empty list if directory doesn't exist
+        except Exception as e:
+            logger.error(f"Error listing local policy files in {self.policies_dir}: {e}")
+            return []  # Return empty list on other errors
+        return policy_names
+
     def list_policies(self, pattern: Optional[str] = None) -> List[Dict[str, Any]]:
         """List ISM policies in OpenSearch, cleaning up metadata.
 
@@ -115,6 +157,7 @@ class ISMPolicyManager:
                 # cleanup
                 policy_data.pop("last_updated_time", None)
                 policy_data.pop("schema_version", None)
+                policy_data.pop("policy_id", None)
                 ism_template_list = policy_data.get("ism_template")
                 if isinstance(ism_template_list, list):
                     for ism_template_item in ism_template_list:
@@ -167,13 +210,19 @@ class ISMPolicyManager:
             logger.error(f"Failed to save ISM policy '{name}': {e}")
         return file_path
 
-    def publish_policy(self, policy_name: str, policy_file: str) -> bool:
+    def publish_policy(self, policy_name: str) -> bool:
         """Publish an ISM policy from a local file to OpenSearch.
 
-        :param policy_name: Name of the policy.
-        :param policy_file: Path to the policy file.
+        Finds the policy file based on the name and publishes it.
+
+        :param policy_name: Name of the policy (should match the filename without extension).
         :return: True if the policy was published successfully, False otherwise.
         """
+        policy_file = self._find_policy_file(policy_name)
+        if not policy_file:
+            logger.error(f"Could not find policy file for '{policy_name}' in {self.policies_dir}")
+            return False
+
         try:
             with open(policy_file, "r") as f:
                 policy_data = yaml.safe_load(f)
@@ -213,7 +262,9 @@ class ISMPolicyManager:
                 logger.info(f"Created ISM policy '{policy_name}' in OpenSearch.")
 
         except Exception as e:
-            logger.error(f"Failed to publish ISM policy '{policy_name}': {e}")
+            logger.error(
+                f"Failed to publish ISM policy '{policy_name}' from file {policy_file}: {e}"
+            )
             return False
         return True
 
@@ -226,13 +277,13 @@ class ISMPolicyManager:
         results = {}
         # Get all policy files
         for file in os.listdir(self.policies_dir):
-            if file.endswith((".yaml", ".yml")):
+            if file.endswith(".yaml"):
                 # Extract policy name from filename
-                policy_name = file.split(".")[0]
+                policy_name = os.path.splitext(file)[0]
                 if pattern and not fnmatch.fnmatch(policy_name, pattern):
                     continue
-                policy_file = os.path.join(self.policies_dir, file)
-                success = self.publish_policy(policy_name, policy_file)
+                # policy_file = os.path.join(self.policies_dir, file) # No longer needed here
+                success = self.publish_policy(policy_name)
                 results[policy_name] = success
 
         return results
@@ -259,11 +310,11 @@ class ISMPolicyManager:
         """
         from deepdiff import DeepDiff
 
-        # Construct file path for local policy
-        policy_file = os.path.join(self.policies_dir, f"{policy_name}.yaml")
+        # Find the local policy file
+        policy_file = self._find_policy_file(policy_name)
 
-        if not os.path.exists(policy_file):
-            logger.error(f"Local policy file not found: {policy_file}")
+        if not policy_file:
+            logger.error(f"Local policy file for '{policy_name}' not found in {self.policies_dir}")
             return None
 
         # Load local policy
