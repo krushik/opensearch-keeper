@@ -77,6 +77,22 @@ class ISMPolicyManager:
         logger.warning(f"Policy file for '{policy_name}' not found in {self.policies_dir}")
         return None
 
+    def _cleanup_policy_metadata(self, policy_data: Dict[str, Any]) -> None:
+        """Remove metadata fields from a policy dictionary in-place."""
+        # Remove top-level metadata
+        policy_data.pop("last_updated_time", None)
+        policy_data.pop("schema_version", None)
+        policy_data.pop(
+            "policy_id", None
+        )  # policy_id is often used as the name, ensure it's handled before cleanup
+
+        # Remove metadata from ism_template if present
+        ism_template_list = policy_data.get("ism_template")
+        if isinstance(ism_template_list, list):
+            for ism_template_item in ism_template_list:
+                if isinstance(ism_template_item, dict):
+                    ism_template_item.pop("last_updated_time", None)
+
     def list_local_policies_names(self, pattern: Optional[str] = None) -> List[str]:
         """List local ISM policy names from the policies directory.
 
@@ -154,15 +170,8 @@ class ISMPolicyManager:
                 # drop milliseconds to get standard unix timestamp
                 last_updated_time = policy_data.get("last_updated_time", 0) // 1000
 
-                # cleanup
-                policy_data.pop("last_updated_time", None)
-                policy_data.pop("schema_version", None)
-                policy_data.pop("policy_id", None)
-                ism_template_list = policy_data.get("ism_template")
-                if isinstance(ism_template_list, list):
-                    for ism_template_item in ism_template_list:
-                        if isinstance(ism_template_item, dict):
-                            ism_template_item.pop("last_updated_time", None)
+                # cleanup using the helper method
+                self._cleanup_policy_metadata(policy_data)
 
                 policies.append(
                     {
@@ -338,15 +347,8 @@ class ISMPolicyManager:
 
             remote_policy = remote_response.get("policy", {})
 
-            # Clean metadata from remote policy for comparison
-            remote_policy.pop("last_updated_time", None)
-            remote_policy.pop("schema_version", None)
-            remote_policy.pop("policy_id", None)
-            ism_template_list = remote_policy.get("ism_template")
-            if isinstance(ism_template_list, list):
-                for ism_template_item in ism_template_list:
-                    if isinstance(ism_template_item, dict):
-                        ism_template_item.pop("last_updated_time", None)
+            # cleanup metadata from remote policy for comparison using the helper method
+            self._cleanup_policy_metadata(remote_policy)
 
             # Get the diff
             diff = DeepDiff(remote_policy, local_policy, ignore_order=True)
